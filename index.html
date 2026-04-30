@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duit — Budget Tracker for Messy Brains 😌</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #F5F2ED;
+    --surface: #FDFCF9;
+    --surface2: #F0EDE7;
+    --border: rgba(60,45,20,0.12);
+    --border2: rgba(60,45,20,0.22);
+    --text: #1C1713;
+    --text2: #6B5E4E;
+    --text3: #9C8D7E;
+    --accent: #C8531A;
+    --accent2: #E8784A;
+    --green: #2D7A4F;
+    --green-bg: #EAF5EE;
+    --amber: #A06010;
+    --amber-bg: #FBF2E0;
+    --red: #B03020;
+    --red-bg: #FAECEB;
+    --shadow: 0 1px 3px rgba(60,40,10,0.08), 0 4px 16px rgba(60,40,10,0.05);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--text);
+    color: var(--bg);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent2);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .month-badge {
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.12);
+    padding: 5px 14px;
+    border-radius: 20px;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.02em;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .left-col { display: flex; flex-direction: column; gap: 1.25rem; }
+  .right-col { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    transition: box-shadow 0.2s;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 13px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* SUMMARY HERO */
+  .hero-card {
+    background: var(--text);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(200,83,26,0.15);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 46px;
+    line-height: 1;
+    color: #fff;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-amount.negative { color: #F09595; }
+  .hero-amount.low { color: #FAC775; }
+
+  .hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .hero-stat { }
+  .hero-stat .hs-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+  .hero-stat .hs-val {
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* SIGNAL BARS */
+  .signal {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .signal:last-child { margin-bottom: 0; }
+  .signal-icon {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+  }
+  .sig-green { background: var(--green-bg); color: var(--green); }
+  .sig-green .signal-icon { background: var(--green); color: #fff; }
+  .sig-amber { background: var(--amber-bg); color: var(--amber); }
+  .sig-amber .signal-icon { background: var(--amber); color: #fff; }
+  .sig-red { background: var(--red-bg); color: var(--red); }
+  .sig-red .signal-icon { background: var(--red); color: #fff; }
+
+  /* INPUT ROWS */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .input-row:hover { border-color: var(--border2); }
+
+  .input-row .row-label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    min-width: 0;
+  }
+
+  .input-row .row-label::placeholder { color: var(--text3); }
+
+  .rm-prefix {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.03em;
+  }
+
+  .amount-input {
+    width: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    background: transparent;
+    border: none;
+    outline: none;
+    text-align: right;
+    color: var(--text);
+  }
+
+  .amount-input::placeholder { color: var(--text3); }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.5;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .del-btn:hover { opacity: 1; color: var(--red); }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed var(--border2);
+    color: var(--text3);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 6px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .add-btn:hover {
+    background: var(--surface2);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* DAILY LOG */
+  .daily-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 95px 30px;
+    gap: 8px;
+    padding: 0 10px;
+    margin-bottom: 6px;
+  }
+  .daily-header span {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .daily-header span:nth-child(3) { text-align: right; }
+
+  .daily-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 95px 30px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .daily-row:hover { border-color: var(--border2); }
+
+  .daily-row input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    width: 100%;
+  }
+  .daily-row input::placeholder { color: var(--text3); }
+  .daily-row input[type="number"] { text-align: right; font-weight: 500; }
+  .daily-row input[type="date"] { font-size: 12px; color: var(--text2); }
+
+  /* THRESHOLD */
+  .threshold-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .threshold-wrap label { font-size: 13px; color: var(--text2); flex: 1; }
+  .threshold-wrap .rm-prefix { font-weight: 600; }
+  .threshold-wrap input {
+    width: 100px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin-top: 1rem; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.3s;
+  }
+
+  /* CHARTS */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1.25rem;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text3);
+    transition: background 0.15s, color 0.15s;
+  }
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(60,40,10,0.1);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.1rem 0;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 800px) {
+    .page-grid { grid-template-columns: 1fr; }
+    .container { padding: 1.25rem 1rem 3rem; }
+    header { padding: 0 1.25rem; }
+    .hero-amount { font-size: 36px; }
+  }
+
+  /* WELCOME BANNER */
+  .welcome-banner {
+    background: linear-gradient(135deg, #2A1F14 0%, #3D2B18 100%);
+    border-radius: var(--radius);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .welcome-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .welcome-text p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+  }
+  .start-btn {
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .start-btn:hover { background: var(--accent); transform: translateY(-1px); }
+  .start-btn:active { transform: translateY(0); }
+
+  /* CATEGORY CHIPS */
+  .chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    user-select: none;
+  }
+  .chip:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+  }
+  .chips-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  /* BALANCE BOX */
+  .balance-box {
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  .balance-box .bb-emoji { font-size: 22px; margin-bottom: 4px; }
+  .balance-box .bb-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px; }
+  .balance-box .bb-amount { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1.1; }
+  .balance-box .bb-msg { font-size: 12px; margin-top: 4px; opacity: 0.8; }
+  .bb-safe { background: var(--green-bg); color: var(--green); }
+  .bb-tight { background: var(--amber-bg); color: var(--amber); }
+  .bb-over { background: var(--red-bg); color: var(--red); }
+
+  /* RESET BUTTON */
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+  /* MICROCOPY */
+  .microcopy {
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+    text-align: center;
+    padding: 6px 0 2px;
+  }
+
+  /* Extra breathing room */
+  .card { padding: 1.75rem; }
+  .left-col { gap: 1.5rem; }
+  .right-col { gap: 1.5rem; }
+
+  /* Animations */
+  .card { animation: fadeUp 0.35s ease both; }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    Duit
+  </div>
+  <div class="month-badge" id="month-label"></div>
+</header>
+
+<div class="container">
+
+  <!-- WELCOME BANNER -->
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h1>Budget Tracker for messy brains &amp; lazy planners 😌</h1>
+      <p>Track your money in under 10 seconds. No stress, no spreadsheets.</p>
+    </div>
+    <button class="start-btn" onclick="document.getElementById('daily-list').scrollIntoView({behavior:'smooth'}); document.querySelector('#daily-list + .add-btn').click()">+ Start tracking</button>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="hero-label">Monthly balance</div>
+    <div class="hero-amount" id="hero-savings">RM 0</div>
+    <div class="hero-sub" id="hero-sub">Loading...</div>
+    <div class="hero-grid">
+      <div class="hero-stat">
+        <div class="hs-label">Total income</div>
+        <div class="hs-val" id="hs-income">—</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-label">Total spent</div>
+        <div class="hs-val" id="hs-spent">—</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-label">Fixed costs</div>
+        <div class="hs-val" id="hs-fixed">—</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-label">Variable spend</div>
+        <div class="hs-val" id="hs-daily">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-grid">
+    <!-- LEFT COLUMN -->
+    <div class="left-col">
+
+      <!-- SIGNALS -->
+      <div class="card">
+        <div class="card-title">Status signals</div>
+        <div id="signals"></div>
+        <div id="balance-box"></div>
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span>Budget used</span>
+            <span id="pct-label">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%;background:var(--green)"></div>
+          </div>
+        </div>
+        <div class="microcopy" style="margin-top:1rem;">No judgment here ☕</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;">
+          <button class="reset-btn" onclick="exportData()">📤 Export</button>
+          <label class="reset-btn" style="cursor:pointer;">📥 Import <input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+          <button class="reset-btn" onclick="resetMonth()">🔄 Reset month</button>
+        </div>
+      </div>
+
+      <!-- INCOME -->
+      <div class="card">
+        <div class="card-title">Monthly income</div>
+        <div class="input-row">
+          <input class="row-label" type="text" value="Salary (Income 1)" onchange="recalc()">
+          <span class="rm-prefix">RM</span>
+          <input class="amount-input" type="number" id="inc1" value="5200" onchange="recalc()">
+        </div>
+        <div class="input-row">
+          <input class="row-label" type="text" value="Income 2 (net)" onchange="recalc()">
+          <span class="rm-prefix">RM</span>
+          <input class="amount-input" type="number" id="inc2" value="4700" onchange="recalc()">
+        </div>
+        <div class="microcopy" style="text-align:left;margin-top:0.5rem;">Be honest, future you will thank you 😌</div>
+      </div>
+
+      <!-- FIXED EXPENSES -->
+      <div class="card">
+        <div class="card-title">Fixed expenses</div>
+        <div id="fixed-list">
+          <div class="input-row" data-fixed>
+            <input class="row-label" type="text" value="Car loan" onchange="recalc()">
+            <span class="rm-prefix">RM</span>
+            <input class="amount-input" type="number" value="1500" onchange="recalc()">
+            <button class="del-btn" onclick="delFixed(this)" title="Remove">×</button>
+          </div>
+          <div class="input-row" data-fixed>
+            <input class="row-label" type="text" value="Rent" onchange="recalc()">
+            <span class="rm-prefix">RM</span>
+            <input class="amount-input" type="number" value="2000" onchange="recalc()">
+            <button class="del-btn" onclick="delFixed(this)" title="Remove">×</button>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addFixed()">+ Add fixed expense</button>
+      </div>
+
+      <!-- THRESHOLD -->
+      <div class="card">
+        <div class="card-title">Warning threshold</div>
+        <div class="threshold-wrap">
+          <label>Alert when savings fall below</label>
+          <span class="rm-prefix">RM</span>
+          <input type="number" id="threshold" value="6000" onchange="recalc()">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <!-- DAILY LOG -->
+      <div class="card">
+        <div class="card-title">Daily spending log</div>
+        <div class="chips-hint">Tap a chip to quickly add a category 👇</div>
+        <div class="chips-wrap">
+          <span class="chip" onclick="quickAdd('Food 🍜')">Food 🍜</span>
+          <span class="chip" onclick="quickAdd('Transport 🚗')">Transport 🚗</span>
+          <span class="chip" onclick="quickAdd('Groceries 🛒')">Groceries 🛒</span>
+          <span class="chip" onclick="quickAdd('Shopping 🛍️')">Shopping 🛍️</span>
+          <span class="chip" onclick="quickAdd('Bills 🧾')">Bills 🧾</span>
+          <span class="chip" onclick="quickAdd('Fun 🎉')">Fun 🎉</span>
+          <span class="chip" onclick="quickAdd('Petrol ⛽')">Petrol ⛽</span>
+          <span class="chip" onclick="quickAdd('Nightlife 🍸')">Nightlife 🍸</span>
+        </div>
+        <div class="daily-header">
+          <span>Date</span>
+          <span>Description</span>
+          <span style="text-align:right">Amount</span>
+          <span></span>
+        </div>
+        <div id="daily-list"></div>
+        <button class="add-btn" onclick="addDaily()">+ Add entry</button>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="card">
+        <div class="card-title">Charts & analysis</div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('daily')">Daily spending</button>
+          <button class="tab-btn" onclick="switchTab('summary')">Budget overview</button>
+          <button class="tab-btn" onclick="switchTab('breakdown')">Breakdown</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-daily">
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="dailyChart" role="img" aria-label="Bar chart of daily spending amounts"></canvas>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-summary">
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="summaryChart" role="img" aria-label="Bar chart comparing income vs expenses vs savings"></canvas>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-breakdown">
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="breakdownChart" role="img" aria-label="Doughnut chart showing spending breakdown"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let dailyChart, summaryChart, breakdownChart;
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmt(n) {
+  return 'RM ' + Math.round(n).toLocaleString('en-MY');
+}
+
+function fmtShort(n) {
+  return 'RM ' + Math.round(n).toLocaleString('en-MY');
+}
+
+// Set month label
+(function() {
+  const now = new Date();
+  document.getElementById('month-label').textContent = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+})();
+
+// ── SAVE / LOAD ──────────────────────────────────────────────
+const STORE_KEY = 'duit_budget_v1';
+
+function saveData() {
+  try {
+    // Income
+    const inc1Label = document.querySelector('#fixed-list') ? document.getElementById('inc1').closest('.input-row')?.querySelector('.row-label')?.value : '';
+    const data = {
+      inc1: document.getElementById('inc1').value,
+      inc2: document.getElementById('inc2').value,
+      inc1Label: document.querySelectorAll('.card')[1]?.querySelectorAll('.row-label')[0]?.value || '',
+      inc2Label: document.querySelectorAll('.card')[1]?.querySelectorAll('.row-label')[1]?.value || '',
+      threshold: document.getElementById('threshold').value,
+      fixed: [],
+      daily: [],
+    };
+
+    document.querySelectorAll('[data-fixed]').forEach(row => {
+      data.fixed.push({
+        label: row.querySelector('input[type="text"]').value,
+        amt: row.querySelector('input[type="number"]').value,
+      });
+    });
+
+    document.querySelectorAll('[data-daily]').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      data.daily.push({
+        date: inputs[0].value,
+        desc: inputs[1].value,
+        amt: inputs[2].value,
+      });
+    });
+
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch(e) { /* storage unavailable */ }
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+
+    if (data.inc1 !== undefined) document.getElementById('inc1').value = data.inc1;
+    if (data.inc2 !== undefined) document.getElementById('inc2').value = data.inc2;
+    if (data.threshold !== undefined) document.getElementById('threshold').value = data.threshold;
+
+    // Income labels
+    const incLabels = document.querySelectorAll('.card .row-label');
+    if (data.inc1Label && incLabels[0]) incLabels[0].value = data.inc1Label;
+    if (data.inc2Label && incLabels[1]) incLabels[1].value = data.inc2Label;
+
+    // Fixed expenses
+    if (data.fixed && data.fixed.length) {
+      document.getElementById('fixed-list').innerHTML = '';
+      data.fixed.forEach(f => {
+        const list = document.getElementById('fixed-list');
+        const div = document.createElement('div');
+        div.className = 'input-row'; div.setAttribute('data-fixed', '');
+        div.innerHTML = `<input class="row-label" type="text" value="${f.label}" onchange="recalc()"><span class="rm-prefix">RM</span><input class="amount-input" type="number" value="${f.amt}" onchange="recalc()"><button class="del-btn" onclick="delFixed(this)" title="Remove">×</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    // Daily entries
+    if (data.daily && data.daily.length) {
+      data.daily.forEach(d => addDailyEntry(d.date, d.desc, d.amt));
+    }
+
+    return true;
+  } catch(e) { return false; }
+}
+
+// Show a subtle "saved" toast
+function showSavedToast() {
+  let toast = document.getElementById('save-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'save-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1C1713;color:#fff;font-size:12px;padding:8px 16px;border-radius:20px;opacity:0;transition:opacity 0.3s;z-index:999;pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = '✓ Saved';
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+}
+
+// Init: load saved data or fall back to samples
+const loaded = loadData();
+if (!loaded) {
+  // First-time sample entries so the page doesn't look empty
+  const samples = [
+    { desc: 'Groceries 🛒', amt: 120 },
+    { desc: 'Food 🍜', amt: 25 },
+    { desc: 'Petrol ⛽', amt: 80 },
+  ];
+  samples.forEach((s, i) => {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    addDailyEntry(d.toISOString().split('T')[0], s.desc, s.amt);
+  });
+}
+
+function addFixed() {
+  const list = document.getElementById('fixed-list');
+  const div = document.createElement('div');
+  div.className = 'input-row';
+  div.setAttribute('data-fixed', '');
+  div.innerHTML = `
+    <input class="row-label" type="text" placeholder="Expense name" onchange="recalc()">
+    <span class="rm-prefix">RM</span>
+    <input class="amount-input" type="number" value="0" onchange="recalc()">
+    <button class="del-btn" onclick="delFixed(this)" title="Remove">×</button>`;
+  list.appendChild(div);
+  recalc();
+}
+
+function delFixed(btn) { btn.closest('[data-fixed]').remove(); recalc(); }
+
+function addDailyEntry(date, desc, amt) {
+  const list = document.getElementById('daily-list');
+  const div = document.createElement('div');
+  div.className = 'daily-row';
+  div.setAttribute('data-daily', '');
+  div.innerHTML = `
+    <input type="date" value="${date || todayStr()}" onchange="recalc()">
+    <input type="text" placeholder="Description" value="${desc || ''}" onchange="recalc()">
+    <input type="number" placeholder="0.00" value="${amt || ''}" onchange="recalc()">
+    <button class="del-btn" onclick="delDaily(this)" title="Remove">×</button>`;
+  list.appendChild(div);
+}
+
+function addDaily() {
+  addDailyEntry(todayStr(), '', '');
+  recalc();
+}
+
+function delDaily(btn) { btn.closest('[data-daily]').remove(); recalc(); }
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['daily','summary','breakdown'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'daily') dailyChart && dailyChart.update();
+  if (name === 'summary') summaryChart && summaryChart.update();
+  if (name === 'breakdown') breakdownChart && breakdownChart.update();
+}
+
+function recalc() {
+  const inc1 = parseFloat(document.getElementById('inc1').value) || 0;
+  const inc2 = parseFloat(document.getElementById('inc2').value) || 0;
+  const threshold = parseFloat(document.getElementById('threshold').value) || 0;
+  const totalIncome = inc1 + inc2;
+
+  let fixedTotal = 0;
+  const fixedItems = [];
+  document.querySelectorAll('[data-fixed]').forEach(row => {
+    const label = row.querySelector('input[type="text"]').value || 'Expense';
+    const amt = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+    fixedTotal += amt;
+    if (amt > 0) fixedItems.push({ label, amt });
+  });
+
+  const dailyMap = {};
+  let dailyTotal = 0;
+  document.querySelectorAll('[data-daily]').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const date = inputs[0].value || todayStr();
+    const amt = parseFloat(inputs[2].value) || 0;
+    dailyTotal += amt;
+    if (!dailyMap[date]) dailyMap[date] = 0;
+    dailyMap[date] += amt;
+  });
+
+  const totalExpenses = fixedTotal + dailyTotal;
+  const savings = totalIncome - totalExpenses;
+  const pct = totalIncome > 0 ? Math.min((totalExpenses / totalIncome) * 100, 100) : 0;
+
+  // Hero
+  const heroEl = document.getElementById('hero-savings');
+  heroEl.textContent = fmt(Math.abs(savings));
+  heroEl.className = 'hero-amount' + (savings < 0 ? ' negative' : savings < threshold ? ' low' : '');
+
+  document.getElementById('hero-sub').textContent = savings < 0
+    ? `You're RM ${Math.round(Math.abs(savings)).toLocaleString()} over budget this month 😬`
+    : savings < threshold
+    ? `Getting close to your limit — watch those spends 👀`
+    : `You still have ${fmt(savings)} to play with ✨`;
+
+  document.getElementById('hs-income').textContent = fmtShort(totalIncome);
+  document.getElementById('hs-spent').textContent = fmtShort(totalExpenses);
+  document.getElementById('hs-fixed').textContent = fmtShort(fixedTotal);
+  document.getElementById('hs-daily').textContent = fmtShort(dailyTotal);
+
+  // Balance box
+  const bb = document.getElementById('balance-box');
+  if (savings < 0) {
+    bb.innerHTML = `<div class="balance-box bb-over"><div class="bb-emoji">🚨</div><div class="bb-label">Overspending</div><div class="bb-amount">${fmt(Math.abs(savings))} over</div><div class="bb-msg">Time to pump the brakes a little</div></div>`;
+  } else if (savings < threshold) {
+    bb.innerHTML = `<div class="balance-box bb-tight"><div class="bb-emoji">😬</div><div class="bb-label">Getting tight</div><div class="bb-amount">${fmt(savings)} left</div><div class="bb-msg">Below your safety threshold — be mindful</div></div>`;
+  } else {
+    bb.innerHTML = `<div class="balance-box bb-safe"><div class="bb-emoji">😌</div><div class="bb-label">Looking safe</div><div class="bb-amount">${fmt(savings)} left</div><div class="bb-msg">You're doing great, keep it up!</div></div>`;
+  }
+
+  // Progress bar
+  document.getElementById('pct-label').textContent = Math.round(pct) + '%';
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 100 ? '#B03020' : pct >= 90 ? '#A06010' : '#2D7A4F';
+
+  // Signals
+  const sig = document.getElementById('signals');
+  let html = '';
+
+  if (totalExpenses > totalIncome) {
+    html += signal('red', '!', `Overspending — you're ${fmt(totalExpenses - totalIncome)} over your income this month`);
+  } else if (pct >= 90) {
+    html += signal('amber', '!', `Almost maxed out — ${Math.round(pct)}% of income used. Slow down a little 🐢`);
+  } else {
+    html += signal('green', '✓', `On track — ${Math.round(pct)}% spent, ${fmt(totalIncome - totalExpenses)} still available 🎉`);
+  }
+
+  if (savings < 0) {
+    html += signal('red', '!', `Savings alert — you're ${fmt(Math.abs(savings))} in the red this month`);
+  } else if (savings < threshold) {
+    html += signal('amber', '!', `Low savings — ${fmt(savings)} is below your RM ${Math.round(threshold).toLocaleString()} safety net`);
+  } else {
+    html += signal('green', '✓', `Savings healthy — ${fmt(savings)} safely above your threshold 😌`);
+  }
+  sig.innerHTML = html;
+
+  // CHART 1: Daily spending
+  const sortedDates = Object.keys(dailyMap).sort();
+  const dayLabels = sortedDates.map(d => {
+    const p = d.split('-'); return p[2] + '/' + p[1];
+  });
+  const dayVals = sortedDates.map(d => Math.round(dailyMap[d]));
+  const barColors = dayVals.map(v => v > 300 ? '#B03020' : v > 150 ? '#A06010' : '#2D7A4F');
+
+  if (dailyChart) dailyChart.destroy();
+  dailyChart = new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: dayLabels.length ? dayLabels : ['No entries'],
+      datasets: [{
+        data: dayVals.length ? dayVals : [0],
+        backgroundColor: barColors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => 'RM ' + ctx.parsed.y.toLocaleString() } }
+      },
+      scales: {
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45, font: { size: 11, family: 'DM Sans' }, color: '#9C8D7E' },
+          grid: { display: false },
+          border: { color: '#E8E0D5' }
+        },
+        y: {
+          ticks: { callback: v => 'RM ' + v.toLocaleString(), font: { size: 11, family: 'DM Sans' }, color: '#9C8D7E' },
+          beginAtZero: true,
+          grid: { color: 'rgba(60,40,10,0.05)' },
+          border: { display: false }
+        }
+      }
+    }
+  });
+
+  // CHART 2: Summary
+  const savColor = savings < 0 ? '#B03020' : savings < threshold ? '#A06010' : '#2D7A4F';
+  if (summaryChart) summaryChart.destroy();
+  summaryChart = new Chart(document.getElementById('summaryChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Total income', 'Fixed costs', 'Daily spend', 'Savings'],
+      datasets: [{
+        data: [Math.round(totalIncome), Math.round(fixedTotal), Math.round(dailyTotal), Math.max(0, Math.round(savings))],
+        backgroundColor: ['#1C5E3A', '#B03020', '#A06010', savColor],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => 'RM ' + ctx.parsed.y.toLocaleString() } }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 11, family: 'DM Sans' }, color: '#9C8D7E' },
+          grid: { display: false },
+          border: { color: '#E8E0D5' }
+        },
+        y: {
+          ticks: { callback: v => 'RM ' + v.toLocaleString(), font: { size: 11, family: 'DM Sans' }, color: '#9C8D7E' },
+          beginAtZero: true,
+          grid: { color: 'rgba(60,40,10,0.05)' },
+          border: { display: false }
+        }
+      }
+    }
+  });
+
+  // CHART 3: Breakdown (doughnut)
+  const breakLabels = [...fixedItems.map(f => f.label), 'Other spending'];
+  const breakData = [...fixedItems.map(f => Math.round(f.amt)), Math.round(dailyTotal)];
+  const breakColors = ['#1C5E3A','#B03020','#A06010','#2D7A4F','#6B3DA0','#185E7A','#7A3D18','#2D7A4F'];
+
+  if (breakdownChart) breakdownChart.destroy();
+  if (breakData.some(v => v > 0)) {
+    breakdownChart = new Chart(document.getElementById('breakdownChart'), {
+      type: 'doughnut',
+      data: {
+        labels: breakLabels,
+        datasets: [{
+          data: breakData,
+          backgroundColor: breakColors.slice(0, breakData.length),
+          borderWidth: 2,
+          borderColor: '#FDFCF9',
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: {
+            display: true,
+            position: 'right',
+            labels: {
+              font: { size: 12, family: 'DM Sans' },
+              color: '#6B5E4E',
+              padding: 14,
+              usePointStyle: true,
+              pointStyle: 'rect',
+            }
+          },
+          tooltip: { callbacks: { label: ctx => ctx.label + ': RM ' + ctx.parsed.toLocaleString() } }
+        }
+      }
+    });
+  }
+  saveData();
+  showSavedToast();
+}
+
+function signal(type, icon, msg) {
+  const cls = type === 'red' ? 'sig-red' : type === 'amber' ? 'sig-amber' : 'sig-green';
+  return `<div class="signal ${cls}"><div class="signal-icon">${icon}</div><div>${msg}</div></div>`;
+}
+
+function quickAdd(category) {
+  addDailyEntry(todayStr(), category, '');
+  const rows = document.querySelectorAll('[data-daily]');
+  const lastRow = rows[rows.length - 1];
+  if (lastRow) {
+    const amtInput = lastRow.querySelector('input[type="number"]');
+    if (amtInput) { amtInput.focus(); amtInput.select(); }
+  }
+  recalc();
+}
+
+function exportData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) { alert('Nothing to export yet — add some entries first! 😌'); return; }
+    const now = new Date();
+    const filename = `duit-budget-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.json`;
+    const blob = new Blob([raw], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('Export failed — sorry! 😬'); }
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Basic validation
+      if (typeof data.inc1 === 'undefined' || !Array.isArray(data.daily)) {
+        alert('This file doesn\'t look right — make sure you\'re importing a Duit export file 😬'); return;
+      }
+      if (!confirm('This will replace everything on this device with the imported data. Continue?')) return;
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+      // Clear current UI and reload from storage
+      document.getElementById('fixed-list').innerHTML = '';
+      document.getElementById('daily-list').innerHTML = '';
+      loadData();
+      recalc();
+    } catch(err) { alert('Couldn\'t read that file — is it a valid Duit export? 😬'); }
+  };
+  reader.readAsText(file);
+  // Reset the file input so the same file can be re-imported if needed
+  event.target.value = '';
+}
+
+function resetMonth() {
+  if (!confirm('Reset this month? This will clear all daily entries. Your income and fixed expenses will stay. 😌')) return;
+  document.querySelectorAll('[data-daily]').forEach(r => r.remove());
+  recalc();
+}
+
+recalc();
+</script>
+</body>
+</html>
